@@ -1,10 +1,10 @@
 GCC = g++
 GCC_FLAGS = -Ofast -faggressive-loop-optimizations
 OBJ_DIR = bin
-INCL_DIR = header 
+INCL_DIR = include 
 SRC_DIR = src
 OBJ = $(OBJ_DIR)/main.o
-EXE = sombol1.exe
+EXE = gpuHeap.exe
 
 default: $(EXE)
 
