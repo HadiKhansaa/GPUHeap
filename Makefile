@@ -1,18 +1,19 @@
-GCC = g++
-GCC_FLAGS = -Ofast -faggressive-loop-optimizations
-OBJ_DIR = bin
-INCL_DIR = include 
-SRC_DIR = src
-OBJ = $(OBJ_DIR)/main.o
-EXE = gpuHeap.exe
+NVCC        = nvcc
+NVCC_FLAGS  = -O3
+INCL_DIR    = header
+OBJ         = heapInsertKernelTest.o
+EXE         = heap
 
 default: $(EXE)
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
-	$(GCC) -I $(INCL_DIR) $(GCC_FLAGS) -c -o $@ $<
+%.o: %.cu
+	$(NVCC) -I $(INCL_DIR) $(NVCC_FLAGS) -c -o $@ $<
+
+device_link.o: $(OBJ)
+	$(NVCC) $(NVCC_FLAGS) $^ -o $@
 
 $(EXE): $(OBJ)
-	$(GCC) -I $(INCL_DIR) $(GCC_FLAGS) $(OBJ) -o $(EXE)
+	$(NVCC) $(NVCC_FLAGS) $(OBJ) -o $@
 
 clean:
-	del /f /q $(OBJ_DIR)\*.o $(EXE)
+	del /Q $(OBJ) $(EXE).exe $(EXE).exp $(EXE).lib
