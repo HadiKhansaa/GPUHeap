@@ -16,4 +16,8 @@ $(EXE): $(OBJ)
 	$(NVCC) $(NVCC_FLAGS) $(OBJ) -o $@
 
 clean:
+ifeq ($(OS),Windows_NT)
 	del /Q $(OBJ) $(EXE).exe $(EXE).exp $(EXE).lib
+else
+	rm -f $(OBJ) $(EXE) $(EXE).exp $(EXE).lib
+endif
