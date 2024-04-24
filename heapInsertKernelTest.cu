@@ -144,19 +144,19 @@ int main(int argc, char *argv[]) {
 
     // deletion kernel
 
-    startTime(&timer);
+    // startTime(&timer);
 
-    deleteKernel<<<blockNum, blockSize, smemSize>>>(d_heap, heapItems, arrayNum, batchSize);
+    // deleteKernel<<<blockNum, blockSize, smemSize>>>(d_heap, heapItems, arrayNum, batchSize);
 
-    cudaDeviceSynchronize();
+    // cudaDeviceSynchronize();
 
-    // Error checking
-    err = cudaGetLastError();
-    if(err != cudaSuccess)
-        std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
+    // // Error checking
+    // err = cudaGetLastError();
+    // if(err != cudaSuccess)
+    //     std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
 
-    stopTime(&timer);
-    printElapsedTime(timer, "Parrallel Heap Delete", GREEN);
+    // stopTime(&timer);
+    // printElapsedTime(timer, "Parrallel Heap Delete", GREEN);
     
     delete []h_tItems;
 
