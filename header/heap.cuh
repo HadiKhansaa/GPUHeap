@@ -76,7 +76,7 @@ class Heap {
             nodeSize = 0;
         }
 
-        bool checintInsertHeap() {
+        bool checkintInsertHeap() {
             int h_currNumNodes;
             int h_partialBufferSize;
             cudaMemcpy(&h_currNumNodes, currNumNodes, sizeof(int), cudaMemcpyDeviceToHost);

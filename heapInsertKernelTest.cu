@@ -35,8 +35,18 @@ __global__ void insertKernel(Heap *heap, int *items, int arraySize, int batchSiz
     __syncthreads();
 }
 
+__global__ void insertKernelDifferentSizes(Heap *heap, int *items, int arraySize, int batchSize) {
+    int batchNeed = arraySize / batchSize;
+    // insertion
+    for (int i = blockIdx.x; i < batchNeed; i += gridDim.x) {
+        // insert items to buffer
+        heap->insertion(items + i * batchSize, batchSize, 0);
+        __syncthreads();
+    }
+}
+
 __global__ void deleteKernel(Heap *heap, int *items, int arraySize, int batchSize) {
-    uint32_t batchNeed = arraySize / batchSize;
+    int batchNeed = arraySize / batchSize;
     if(blockIdx.x >= batchNeed) return;
     int size = 0;
     // delete items from heap
@@ -45,7 +55,6 @@ __global__ void deleteKernel(Heap *heap, int *items, int arraySize, int batchSiz
         heap->deleteUpdate(0);
     }
     __syncthreads();
-    
 }
 
 int main(int argc, char *argv[]) {
@@ -55,19 +64,24 @@ int main(int argc, char *argv[]) {
     
     Timer timer;
 
-    // Block size and number of blocks
-    int blockSize = 4;
+    // Block size and batch size
+    int blockSize = 512;
+    int batchSize = 1024;
 
     //size of the array we need to insert
     int arrayNum = 1000;
 
-    if(argc == 3)
+    if(argc == 4)
     {
         blockSize = atoi(argv[1]);
-        arrayNum = atoi(argv[2]);
+        batchSize = atoi(argv[2]);
+        arrayNum = atoi(argv[3]);
     }
-
-    int batchSize = blockSize;
+    else
+    {
+        std::cout << "Usage: ./heapInsertKernelTest <blockSize> <batchSize> <arraySize>" << std::endl;
+        return 1;
+    }
     arrayNum = (arrayNum + batchSize - 1) / batchSize * batchSize;
 
     // Batch size and number of batches
@@ -123,7 +137,7 @@ int main(int argc, char *argv[]) {
 
     // call the kernel 
     startTime(&timer);
-    insertKernel<<<blockNum, blockSize, smemSize>>>(d_heap, heapItems, arrayNum, batchSize);
+    insertKernelDifferentSizes<<<blockNum, blockSize, smemSize>>>(d_heap, heapItems, arrayNum, batchSize);
 
     cudaDeviceSynchronize();
 
@@ -136,18 +150,15 @@ int main(int argc, char *argv[]) {
     printElapsedTime(timer, "Parrallel Heap Insert", DGREEN);
 
     // validate the heap
-    if(h_heap.checintInsertHeap())
+    if(h_heap.checkintInsertHeap())
         std::cout << "\033[1;32m" << "Heap is valid" << std::endl << "\033[0m";
     else
         std::cout << "\033[0;31m" << "Heap is invalid"<< std::endl << "\033[0m";
 
 
     // deletion kernel
-
     // startTime(&timer);
-
     // deleteKernel<<<blockNum, blockSize, smemSize>>>(d_heap, heapItems, arrayNum, batchSize);
-
     // cudaDeviceSynchronize();
 
     // // Error checking
@@ -161,5 +172,4 @@ int main(int argc, char *argv[]) {
     delete []h_tItems;
 
     // h_heap.printHeap();
-    
 }
