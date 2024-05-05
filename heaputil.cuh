@@ -2,6 +2,35 @@
 #define HEAPUTIL_CUH
 
 #include <unordered_set>
+// Atomic operation to change the status of a node from origninal state to new state.
+        // int atomicCAS(int* address, int compare, int val); // atomic compare and swap
+        // returns the initial value pointed to by address.
+        __device__ bool changeStatus(int *_status, int oriS, int newS) {
+            if ((oriS == AVAIL  && newS == TARGET) ||
+                (oriS == TARGET && newS == MARKED) ||
+                (oriS == MARKED && newS == TARGET) ||
+                (oriS == TARGET && newS == AVAIL ) ||
+                (oriS == TARGET && newS == INUSE ) ||
+                (oriS == INUSE  && newS == AVAIL ) ||
+                (oriS == AVAIL  && newS == INUSE )) {
+                while (atomicCAS(_status, oriS, newS) != oriS){
+                }
+                return true;
+            }
+            else {
+                printf("LOCK ERROR %d %d\n", oriS, newS);
+                return false;
+            }
+        }
+
+        // determine the next batch when insert operation updating the heap
+        // given the current batch index and the target batch index
+        // return the next batch index to the target batch
+        // __clz (Count Leading Zeros) function calculates the number of leading zeros in the binary representation. 
+         __device__ int getNextIdxToTarget(int currentIdx, int targetIdx) {
+            return targetIdx >> (__clz(currentIdx) - __clz(targetIdx) - 1);
+        }
+
 
 __inline__ __device__ void batchCopy(int  *dest, int  *source, int size, bool reset = false, int  init_limits = 0)
 {
