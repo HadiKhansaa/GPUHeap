@@ -424,6 +424,8 @@ class Heap {
         int *tmpIdx = (int *)&s[smemOffset];
 
         smemOffset += sizeof(int) * 3 * nodeSize / sizeof(int);
+        // smemOffset += (512 + 1) * sizeof(int) + 2 * nodeSize * sizeof(int); // added for testing
+
         int *tmpType = (int *)&s[smemOffset - 1];
 
         if (threadIdx.x == 0) {

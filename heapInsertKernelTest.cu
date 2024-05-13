@@ -74,9 +74,10 @@ void testGpuHeap(int *h_tItems, int numThreadsPerBlock, int nodeSize, int arrayS
     Timer timer;
 
     // Batch size and number of batches
-    int maxNumNodes = (arraySize + nodeSize - 1) / nodeSize;
-    int numBlocks = maxNumNodes;
-    Heap h_heap(maxNumNodes, nodeSize);
+    int maxNumNodes = arraySize/nodeSize; // it will be a perfect multiple
+    int numBlocks = (arraySize + numThreadsPerBlock - 1) / numThreadsPerBlock;
+
+    Heap h_heap(maxNumNodes * 2, nodeSize);
 
     // Create a heap on device
     int *heapItems;
@@ -92,11 +93,11 @@ void testGpuHeap(int *h_tItems, int numThreadsPerBlock, int nodeSize, int arrayS
     gpuErrchk(cudaMemcpy(d_heap, &h_heap, sizeof(Heap), cudaMemcpyHostToDevice));
 
     stopTime(&timer);
-    printElapsedTime(timer, "Copy to Device", RED);
+    printElapsedTime(timer, "Copy to Device", GREEN);
 
     // Allocate shared memory
     int smemSize = nodeSize * 3 * sizeof(int);
-    smemSize += (numThreadsPerBlock + 1) * sizeof(int) + 2 * nodeSize * sizeof(int);
+    smemSize += (numThreadsPerBlock + 2) * sizeof(int) + 2 * nodeSize * sizeof(int);
 
     // call the kernel 
     startTime(&timer);
@@ -109,19 +110,6 @@ void testGpuHeap(int *h_tItems, int numThreadsPerBlock, int nodeSize, int arrayS
         std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
 
     stopTime(&timer);
-
-    // int *heapItems_deleted;
-    // int arraySizeDeleted = 2048;
-    // // Allocate momory and copy on device
-    // cudaMalloc((void **)&heapItems_deleted, sizeof(int) * (arraySizeDeleted));
-    // deleteKernel<<<numBlocks, numThreadsPerBlock, smemSize>>>(d_heap, heapItems_deleted, arraySizeDeleted , nodeSize);
-    
-    // Error checking
-    // auto err = cudaGetLastError();
-    // if(err != cudaSuccess)
-    //     std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
-
-    
     printElapsedTime(timer, "Parrallel Heap Insert", DGREEN);
 
     // validate the heap
@@ -129,9 +117,22 @@ void testGpuHeap(int *h_tItems, int numThreadsPerBlock, int nodeSize, int arrayS
         std::cout << "\033[1;32m" << "Heap is valid" << std::endl << "\033[0m";
     else
         std::cout << "\033[0;31m" << "Heap is invalid"<< std::endl << "\033[0m";
+    
+    startTime(&timer);
+    heapItems = new int[arraySize];
+    // int maxSharedMem = cudaDeviceProp::sharedMemPerBlock;
+    deleteKernel<<<numBlocks, numThreadsPerBlock, smemSize>>>(d_heap, heapItems, arraySize , nodeSize);
+    gpuErrchk(cudaDeviceSynchronize());
+    // Error checking
+    err = cudaGetLastError();
+    if(err != cudaSuccess)
+        std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
+    stopTime(&timer);
+    printElapsedTime(timer, "Parrallel Heap Delete", RED);
+
+    // h_heap.printHeap();
 
     delete []h_tItems;
-    // h_heap.printHeap();
 }
 
 void testGpuHeapMultipleStrams() {
@@ -223,7 +224,7 @@ int main(int argc, char *argv[]) {
 
     // Block size and batch size
     int numThreadsPerBlock = 512;
-    int nodeSize = 1024;
+    int nodeSize = 2048;
 
     //size of the array we need to insert
     int arraySize = 1000;
@@ -249,7 +250,7 @@ int main(int argc, char *argv[]) {
     testPriorityQueue(h_tItems,arraySize);
 
     // Heap construction
-    // testGpuHeap(h_tItems, numThreadsPerBlock, nodeSize, arraySize);
+    testGpuHeap(h_tItems, numThreadsPerBlock, nodeSize, arraySize);
 
-    testGpuHeapMultipleStrams();
+    // testGpuHeapMultipleStrams();
 }
